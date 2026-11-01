@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>cf-sv-proxy 调试台</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;padding:24px;background:#0f1115;color:#e6e8ec;font:14px/1.6 system-ui,-apple-system,"PingFang SC",sans-serif}
+  .wrap{max-width:720px;margin:0 auto}
+  h1{font-size:20px;margin:0 0 4px}
+  .sub{color:#8b93a1;font-size:13px;margin-bottom:24px}
+  label{display:block;margin:16px 0 6px;color:#a8b0be;font-size:13px}
+  input[type=text],select,textarea{width:100%;padding:10px 12px;border:1px solid #2a3038;border-radius:8px;background:#171b22;color:#e6e8ec;font-size:14px;font-family:inherit}
+  textarea{resize:vertical;min-height:70px;font-size:12px;word-break:break-all}
+  .row{display:flex;gap:12px}
+  .row>*{flex:1}
+  button{margin-top:18px;width:100%;padding:12px;border:0;border-radius:8px;background:#3b82f6;color:#fff;font-size:15px;font-weight:600;cursor:pointer}
+  button:hover{background:#2563eb}
+  .out{margin-top:24px}
+  .preview{margin-top:16px;border:1px solid #2a3038;border-radius:8px;overflow:hidden;background:#000;min-height:60px;display:flex;align-items:center;justify-content:center}
+  .preview img,.preview video{max-width:100%;max-height:420px;display:block}
+  .hint{color:#8b93a1;font-size:12px;margin-top:8px}
+  .err{color:#f87171;font-size:13px;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>cf-sv-proxy 调试台</h1>
+  <div class="sub">填入 Worker 地址和媒体直链，生成代理链接并预览</div>
+
+  <label>Worker 地址</label>
+  <input type="text" id="base" placeholder="https://cf-sv-proxy.xxx.workers.dev">
+
+  <label>媒体直链</label>
+  <textarea id="url" placeholder="https://aweme.snssdk.com/aweme/v1/play/?video_id=xxxx"></textarea>
+
+  <div class="row">
+    <div>
+      <label>平台 type</label>
+      <select id="type"><option value="douyin">douyin</option><option value="weibo">weibo</option></select>
+    </div>
+    <div>
+      <label>媒体类型 mediatype</label>
+      <select id="mediatype"><option value="">自动探测</option><option value="video">video</option><option value="image">image</option></select>
+    </div>
+    <div>
+      <label>download</label>
+      <select id="download"><option value="false">false（内联）</option><option value="true">true（下载）</option></select>
+    </div>
+  </div>
+
+  <button onclick="build()">生成并预览</button>
+
+  <div class="out">
+    <label>代理链接</label>
+    <textarea id="result" readonly placeholder="点击上方按钮生成"></textarea>
+    <div class="hint">proxyurl 默认用 Base64 编码（推荐，避免 &amp; / ? 被截断）</div>
+    <div class="err" id="err"></div>
+    <div class="preview" id="preview"><span class="hint">预览区</span></div>
+  </div>
+</div>
+
+<script>
+function build(){
+  const base = document.getElementById('base').value.trim().replace(/\/+$/,'');
+  const url  = document.getElementById('url').value.trim();
+  const err  = document.getElementById('err');
+  const prev = document.getElementById('preview');
+  err.textContent = ''; prev.innerHTML = '<span class="hint">预览区</span>';
+
+  if(!base || !url){ err.textContent = 'Worker 地址和媒体直链都要填'; return; }
+
+  const b64 = btoa(unescape(encodeURIComponent(url)));
+  const p = new URLSearchParams({ proxyurl: b64 });
+  const type = document.getElementById('type').value;
+  const mt   = document.getElementById('mediatype').value;
+  const dl   = document.getElementById('download').value;
+  if(type) p.set('type', type);
+  if(mt)   p.set('mediatype', mt);
+  if(dl !== 'true') p.set('download', dl);
+
+  const finalUrl = base + '/?' + p.toString();
+  document.getElementById('result').value = finalUrl;
+
+  prev.innerHTML = mt === 'image'
+    ? '<img src="'+finalUrl+'" onerror="this.parentNode.innerHTML=\'<span class=hint>加载失败，可能是 403 或链接过期</span>\'">'
+    : '<video src="'+finalUrl+'" controls autoplay playsinline onerror="this.parentNode.innerHTML=\'<span class=hint>加载失败，可能是 403 或链接过期</span>\'"></video>';
+
+  navigator.clipboard?.writeText(finalUrl).catch(()=>{});
+}
+</script>
+</body>
+</html>

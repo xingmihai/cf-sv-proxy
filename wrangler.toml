@@ -1,0 +1,16 @@
+name = "cf-sv-proxy"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+
+# 部署后得到 https://cf-sv-proxy.<subdomain>.workers.dev
+# 自定义域名：在 Dashboard 绑定，或取消下面注释
+# routes = [
+#   { pattern = "svproxy.example.com", custom_domain = true }
+# ]
+
+# 可选：在 Dashboard → Settings → Variables 里加，避免硬编码改代码
+[vars]
+# ALLOWED_HOST_SUFFIXES = "douyinvod.com,douyinpic.com,snssdk.com,weibo.com,sinaimg.cn"
+
+[observability]
+enabled = true
